@@ -103,8 +103,7 @@ async def delete_user(id: int, user: User = Depends(is_admin)) -> JSONResponse:
         user_to_delete = session.get(User, id)
         if not user_to_delete:
             raise HTTPException(
-                detail={"error": {"message": f"No user found with ID {
-                    id}.", "type": "UserError", "code": 404}},
+                detail={"error": {"message": f"No user found with ID {id}.", "type": "UserError", "code": 404}},
                 status_code=status.HTTP_404_NOT_FOUND
             )
         session.delete(user_to_delete)
