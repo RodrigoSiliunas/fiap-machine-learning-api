@@ -36,10 +36,10 @@ class CommercializationScraping(BaseScraping):
                 item_list = tr.find_all('td')
 
                 if 'tb_item' in item_list[0].get('class', []):
-                    category = item_list[0].text
+                    category = ' '.join(str(item_list[0].text).replace('\n', '').split())
                 elif 'tb_subitem' in item_list[0].get('class', []):
                     products.append(
-                        Product(name=item_list[0].text, category=category))
+                        Product(name=' '.join(str(item_list[0].text).replace('\n', '').split()), category=category))
 
         return products
 
@@ -66,16 +66,13 @@ class CommercializationScraping(BaseScraping):
                     continue
 
                 # Tratamento da quantidade de produtos;
-                production_quantity = ''.join(
-                    filter(str.isdigit, items[1].text))
+                production_quantity = ''.join(filter(str.isdigit, items[1].text))
 
                 if (production_quantity is None) or (production_quantity == ''):
                     production_quantity = 0
 
-                product = list(filter(lambda product: product.get(
-                    'name') == items[0].text, products))
-                commercialization = Commercialization(
-                    year=year, quantity=production_quantity, product_id=product[0].get('id'))
+                product = list(filter(lambda product: product.get('name') == ' '.join(str(items[0].text).replace('\n', '').split()), products))
+                commercialization = Commercialization(year=year, quantity=production_quantity, product_id=product[0].get('id'))
                 commercializations.append(commercialization)
 
         return commercializations

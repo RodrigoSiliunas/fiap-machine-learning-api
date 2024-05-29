@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.param_functions import Body
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
@@ -19,13 +20,14 @@ router = APIRouter(prefix="/v1")
 @router.get('/products', response_model=List[Product])
 async def get_all_products(user: User = Depends(get_current_user)) -> JSONResponse:
     with Session(engine) as session:
-        products = session.query(select(Product)).all()
+        products = session.query(Product).all()
+
 
         return JSONResponse({"success": {
             "message": "Products fetched successfully.",
             "type": "ProductInfo",
             "code": 200
-        }, "products": products}, status.HTTP_200_OK)
+        }, "products": jsonable_encoder(products)}, status.HTTP_200_OK)
 
 
 @router.get('/products/{id}', response_model=Product)
@@ -43,10 +45,10 @@ async def get_product(id: int, user: User = Depends(get_current_user)) -> JSONRe
             "message": "Product fetched successfully.",
             "type": "ProductInfo",
             "code": 200
-        }, "product": product}, status.HTTP_200_OK)
+        }, "product": jsonable_encoder(product)}, status.HTTP_200_OK)
 
 
-@router.get('/products/{name}', response_model=Product)
+@router.get('/products/name/{name}', response_model=Product)
 async def get_product_by_name(name: str, user: User = Depends(get_current_user)) -> JSONResponse:
     with Session(engine) as session:
         product = session.query(Product).filter(Product.name == name).first()
@@ -61,7 +63,7 @@ async def get_product_by_name(name: str, user: User = Depends(get_current_user))
             "message": "Product fetched successfully.",
             "type": "ProductInfo",
             "code": 200
-        }, "product": product}, status.HTTP_200_OK)
+        }, "product": jsonable_encoder(product)}, status.HTTP_200_OK)
 
 
 @router.get('/products/category/{category}', response_model=List[Product])
@@ -80,4 +82,4 @@ async def get_products_by_category(category: str, user: User = Depends(get_curre
             "message": "Products fetched successfully.",
             "type": "ProductInfo",
             "code": 200
-        }, "products": products}, status.HTTP_200_OK)
+        }, "products": jsonable_encoder(products)}, status.HTTP_200_OK)

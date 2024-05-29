@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, status
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
-from sqlmodel import select
 from typing import List
 
 from app.configs.database import engine
@@ -19,9 +19,7 @@ async def get_imports(limit: int = Query(10, ge=1, le=100),
                       offset: int = Query(0, ge=0),
                       user: User = Depends(get_current_user)) -> JSONResponse:
     with Session(engine) as session:
-        imports = session.exec(
-            select(Importation).offset(offset).limit(limit)
-        ).all()
+        imports = session.query(Importation).offset(offset).limit(limit).all()
 
         if not imports:
             raise HTTPException(
@@ -29,8 +27,7 @@ async def get_imports(limit: int = Query(10, ge=1, le=100),
                 detail={"error": {"message": "Importation not found."}}
             )
 
-        total_imports = session.exec(
-            select(Importation)).count()
+        total_imports = session.query(Importation).count()
 
         return JSONResponse({
             "success": {
@@ -38,9 +35,9 @@ async def get_imports(limit: int = Query(10, ge=1, le=100),
                 "type": "ImportInfo",
                 "code": 200
             },
-            "importations": imports,
+            "importations": jsonable_encoder(imports),
             "pagination": {
-                "total": total_imports,
+                "total": jsonable_encoder(total_imports),
                 "limit": limit,
                 "offset": offset
             }
@@ -65,7 +62,7 @@ async def get_import(id: int, user: User = Depends(get_current_user)) -> JSONRes
                 "type": "ImportInfo",
                 "code": 200
             },
-            "importations": importation
+            "importations": jsonable_encoder(importation)
         }, status_code=status.HTTP_200_OK)
 
 
@@ -75,10 +72,8 @@ async def get_imports_by_country(country: str,
                                  offset: int = Query(0, ge=0),
                                  user: User = Depends(get_current_user)) -> JSONResponse:
     with Session(engine) as session:
-        importations = session.exec(
-            select(Importation).where(
-                Importation.country == country).offset(offset).limit(limit)
-        ).all()
+        importations = session.query(Importation).where(
+                Importation.country == country).offset(offset).limit(limit).all()
 
         if not importations:
             raise HTTPException(
@@ -86,9 +81,8 @@ async def get_imports_by_country(country: str,
                 detail={"error": {"message": "Importation not found."}}
             )
 
-        total_importations = session.exec(
-            select(Importation).where(
-                Importation.country == country)).count()
+        total_importations = session.query(Importation).where(
+                Importation.country == country).count()
 
         return JSONResponse({
             "success": {
@@ -96,9 +90,9 @@ async def get_imports_by_country(country: str,
                 "type": "ImportInfo",
                 "code": 200
             },
-            "importations": importations,
+            "importations": jsonable_encoder(importations),
             "pagination": {
-                "total": total_importations,
+                "total": jsonable_encoder(total_importations),
                 "limit": limit,
                 "offset": offset
             }
@@ -111,10 +105,8 @@ async def get_imports_by_category(category: str,
                                   offset: int = Query(0, ge=0),
                                   user: User = Depends(get_current_user)) -> JSONResponse:
     with Session(engine) as session:
-        importations = session.exec(
-            select(Importation).where(
-                Importation.category == category).offset(offset).limit(limit)
-        ).all()
+        importations = session.query(Importation).where(
+                Importation.category == category).offset(offset).limit(limit).all()
 
         if not importations:
             raise HTTPException(
@@ -122,9 +114,8 @@ async def get_imports_by_category(category: str,
                 detail={"error": {"message": "Importation not found."}}
             )
 
-        total_importations = session.exec(
-            select(Importation).where(
-                Importation.category == category)).count()
+        total_importations = session.query(Importation).where(
+                Importation.category == category).count()
 
         return JSONResponse({
             "success": {
@@ -132,9 +123,9 @@ async def get_imports_by_category(category: str,
                 "type": "ImportInfo",
                 "code": 200
             },
-            "importations": importations,
+            "importations": jsonable_encoder(importations),
             "pagination": {
-                "total": total_importations,
+                "total": jsonable_encoder(total_importations),
                 "limit": limit,
                 "offset": offset
             }
@@ -147,10 +138,8 @@ async def get_imports_by_weight(weight: int,
                                 offset: int = Query(0, ge=0),
                                 user: User = Depends(get_current_user)) -> JSONResponse:
     with Session(engine) as session:
-        importations = session.exec(
-            select(Importation).where(
-                Importation.weight == weight).offset(offset).limit(limit)
-        ).all()
+        importations = session.query(Importation).where(
+                Importation.weight == weight).offset(offset).limit(limit).all()
 
         if not importations:
             raise HTTPException(
@@ -158,9 +147,8 @@ async def get_imports_by_weight(weight: int,
                 detail={"error": {"message": "Importation not found."}}
             )
 
-        total_importations = session.exec(
-            select(Importation).where(
-                Importation.weight == weight)).count()
+        total_importations = session.query(Importation).where(
+                Importation.weight == weight).count()
 
         return JSONResponse({
             "success": {
@@ -168,27 +156,25 @@ async def get_imports_by_weight(weight: int,
                 "type": "ImportInfo",
                 "code": 200
             },
-            "importations": importations,
+            "importations": jsonable_encoder(importations),
             "pagination": {
-                "total": total_importations,
+                "total": jsonable_encoder(total_importations),
                 "limit": limit,
                 "offset": offset
             }
         }, status_code=status.HTTP_200_OK)
 
 
-@router.get('/imports/weight', response_model=List[Importation])
+@router.get('/imports/weight/range', response_model=List[Importation])
 async def get_imports_by_weight_range(start_weight: int,
                                       end_weight: int,
                                       limit: int = Query(10, ge=1, le=100),
                                       offset: int = Query(0, ge=0),
                                       user: User = Depends(get_current_user)) -> JSONResponse:
     with Session(engine) as session:
-        importations = session.exec(
-            select(Importation).where(
+        importations = session.query(Importation).where(
                 Importation.weight >= start_weight,
-                Importation.weight <= end_weight).offset(offset).limit(limit)
-        ).all()
+                Importation.weight <= end_weight).offset(offset).limit(limit).all()
 
         if not importations:
             raise HTTPException(
@@ -196,10 +182,9 @@ async def get_imports_by_weight_range(start_weight: int,
                 detail={"error": {"message": "Importation not found."}}
             )
 
-        total_importations = session.exec(
-            select(Importation).where(
+        total_importations = session.query(Importation).where(
                 Importation.weight >= start_weight,
-                Importation.weight <= end_weight)).count()
+                Importation.weight <= end_weight).count()
 
         return JSONResponse({
             "success": {
@@ -207,9 +192,9 @@ async def get_imports_by_weight_range(start_weight: int,
                 "type": "ImportInfo",
                 "code": 200
             },
-            "importations": importations,
+            "importations": jsonable_encoder(importations),
             "pagination": {
-                "total": total_importations,
+                "total": jsonable_encoder(total_importations),
                 "limit": limit,
                 "offset": offset
             }
@@ -222,10 +207,8 @@ async def get_imports_by_value(value: int,
                                offset: int = Query(0, ge=0),
                                user: User = Depends(get_current_user)) -> JSONResponse:
     with Session(engine) as session:
-        importations = session.exec(
-            select(Importation).where(
-                Importation.value == value).offset(offset).limit(limit)
-        ).all()
+        importations = session.query(Importation).where(
+                Importation.value == value).offset(offset).limit(limit).all()
 
         if not importations:
             raise HTTPException(
@@ -233,9 +216,8 @@ async def get_imports_by_value(value: int,
                 detail={"error": {"message": "Importation not found."}}
             )
 
-        total_importations = session.exec(
-            select(Importation).where(
-                Importation.value == value)).count()
+        total_importations = session.query(Importation).where(
+                Importation.value == value).count()
 
         return JSONResponse({
             "success": {
@@ -243,27 +225,25 @@ async def get_imports_by_value(value: int,
                 "type": "ImportInfo",
                 "code": 200
             },
-            "importations": importations,
+            "importations": jsonable_encoder(importations),
             "pagination": {
-                "total": total_importations,
+                "total": jsonable_encoder(total_importations),
                 "limit": limit,
                 "offset": offset
             }
         }, status_code=status.HTTP_200_OK)
 
 
-@router.get('/imports/value', response_model=List[Importation])
+@router.get('/imports/value/range', response_model=List[Importation])
 async def get_imports_by_value_range(start_value: int,
                                      end_value: int,
                                      limit: int = Query(10, ge=1, le=100),
                                      offset: int = Query(0, ge=0),
                                      user: User = Depends(get_current_user)) -> JSONResponse:
     with Session(engine) as session:
-        importations = session.exec(
-            select(Importation).where(
+        importations = session.query(Importation).where(
                 Importation.value >= start_value,
-                Importation.value <= end_value).offset(offset).limit(limit)
-        ).all()
+                Importation.value <= end_value).offset(offset).limit(limit).all()
 
         if not importations:
             raise HTTPException(
@@ -271,10 +251,9 @@ async def get_imports_by_value_range(start_value: int,
                 detail={"error": {"message": "Importation not found."}}
             )
 
-        total_importations = session.exec(
-            select(Importation).where(
+        total_importations = session.query(Importation).where(
                 Importation.value >= start_value,
-                Importation.value <= end_value)).count()
+                Importation.value <= end_value).count()
 
         return JSONResponse({
             "success": {
@@ -282,9 +261,9 @@ async def get_imports_by_value_range(start_value: int,
                 "type": "ImportInfo",
                 "code": 200
             },
-            "importations": importations,
+            "importations": jsonable_encoder(importations),
             "pagination": {
-                "total": total_importations,
+                "total": jsonable_encoder(total_importations),
                 "limit": limit,
                 "offset": offset
             }
@@ -297,10 +276,8 @@ async def get_imports_by_year(year: int,
                               offset: int = Query(0, ge=0),
                               user: User = Depends(get_current_user)) -> JSONResponse:
     with Session(engine) as session:
-        importations = session.exec(
-            select(Importation).where(
-                Importation.year == year).offset(offset).limit(limit)
-        ).all()
+        importations = session.query(Importation).where(
+                Importation.year == year).offset(offset).limit(limit).all()
 
         if not importations:
             raise HTTPException(
@@ -308,9 +285,8 @@ async def get_imports_by_year(year: int,
                 detail={"error": {"message": "Importation not found."}}
             )
 
-        total_importations = session.exec(
-            select(Importation).where(
-                Importation.year == year)).count()
+        total_importations = session.query(Importation).where(
+                Importation.year == year).count()
 
         return JSONResponse({
             "success": {
@@ -318,27 +294,25 @@ async def get_imports_by_year(year: int,
                 "type": "ImportInfo",
                 "code": 200
             },
-            "importations": importations,
+            "importations": jsonable_encoder(importations),
             "pagination": {
-                "total": total_importations,
+                "total": jsonable_encoder(total_importations),
                 "limit": limit,
                 "offset": offset
             }
         }, status_code=status.HTTP_200_OK)
 
 
-@router.get('/imports/year', response_model=List[Importation])
+@router.get('/imports/years/range', response_model=List[Importation])
 async def get_imports_by_year_range(start_year: int,
                                     end_year: int,
                                     limit: int = Query(10, ge=1, le=100),
                                     offset: int = Query(0, ge=0),
                                     user: User = Depends(get_current_user)) -> JSONResponse:
     with Session(engine) as session:
-        importations = session.exec(
-            select(Importation).where(
+        importations = session.query(Importation).where(
                 Importation.year >= start_year,
-                Importation.year <= end_year).offset(offset).limit(limit)
-        ).all()
+                Importation.year <= end_year).offset(offset).limit(limit).all()
 
         if not importations:
             raise HTTPException(
@@ -346,10 +320,9 @@ async def get_imports_by_year_range(start_year: int,
                 detail={"error": {"message": "Importation not found."}}
             )
 
-        total_importations = session.exec(
-            select(Importation).where(
+        total_importations = session.query(Importation).where(
                 Importation.year >= start_year,
-                Importation.year <= end_year)).count()
+                Importation.year <= end_year).count()
 
         return JSONResponse({
             "success": {
@@ -357,9 +330,9 @@ async def get_imports_by_year_range(start_year: int,
                 "type": "ImportInfo",
                 "code": 200
             },
-            "importations": importations,
+            "importations": jsonable_encoder(importations),
             "pagination": {
-                "total": total_importations,
+                "total": jsonable_encoder(total_importations),
                 "limit": limit,
                 "offset": offset
             }

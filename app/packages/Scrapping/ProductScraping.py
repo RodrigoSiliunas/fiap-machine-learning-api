@@ -34,9 +34,9 @@ class ProductScraping(BaseScraping):
                 item_list = tr.find_all('td')
 
                 if 'tb_item' in item_list[0].get('class', []):
-                    category = item_list[0].text
+                    category = ' '.join(str(item_list[0].text).replace('\n', '').split())
                 elif 'tb_subitem' in item_list[0].get('class', []):
-                    products.append(Product(name=item_list[0].text, category=category))
+                    products.append(Product(name=' '.join(str(item_list[0].text).replace('\n', '').split()), category=category))
 
             self.year += 1
             self.product_url = f"http://vitibrasil.cnpuv.embrapa.br/index.php?ano={self.year}&opcao=opt_02"

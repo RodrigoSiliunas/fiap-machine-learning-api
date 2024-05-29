@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, status
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 from sqlmodel import select
 from typing import List
@@ -20,11 +21,9 @@ async def get_productions(user: User = Depends(get_current_user),
                           offset: int = Query(0, ge=0)
                           ) -> JSONResponse:
     with Session(engine) as session:
-        productions = session.exec(
-            select(Production).offset(offset).limit(limit)
-        ).all()
+        productions = session.query(Production).offset(offset).limit(limit).all()
 
-        total_productions = session.exec(select(Production)).count()
+        total_productions = session.query(Production).count()
 
         return JSONResponse({
             "success": {
@@ -32,9 +31,9 @@ async def get_productions(user: User = Depends(get_current_user),
                 "type": "ProductionInfo",
                 "code": 200
             },
-            "productions": productions,
+            "productions": jsonable_encoder(productions),
             "pagination": {
-                "total": total_productions,
+                "total": jsonable_encoder(total_productions),
                 "limit": limit,
                 "offset": offset
             }
@@ -58,7 +57,7 @@ async def get_production(id: int, user: User = Depends(get_current_user)) -> JSO
             "message": "Production fetched successfully.",
             "type": "ProductionInfo",
             "code": 200
-        }, "product": production}, status.HTTP_200_OK)
+        }, "product": jsonable_encoder(production)}, status.HTTP_200_OK)
 
 
 @router.get('/productions/product/{product_id}', response_model=List[Production])
@@ -78,10 +77,10 @@ async def get_productions_by_product_id(product_id: int, user: User = Depends(ge
             "message": "Productions fetched successfully.",
             "type": "ProductionInfo",
             "code": 200
-        }, "products": productions}, status.HTTP_200_OK)
+        }, "products": jsonable_encoder(productions)}, status.HTTP_200_OK)
 
 
-@router.get('/productions/product/{product_name}', response_model=List[Production])
+@router.get('/productions/product/name/{product_name}', response_model=List[Production])
 async def get_productions_by_product_name(product_name: str, user: User = Depends(get_current_user)) -> JSONResponse:
     with Session(engine) as session:
         product = session.query(Product).filter(
@@ -108,7 +107,36 @@ async def get_productions_by_product_name(product_name: str, user: User = Depend
             "message": "Productions fetched successfully.",
             "type": "ProductionInfo",
             "code": 200
-        }, "products": productions}, status.HTTP_200_OK)
+        }, "products": jsonable_encoder(productions)}, status.HTTP_200_OK)
+
+
+@router.get('/productions/years/range', response_model=List[Production])
+async def get_productions_by_year_range(
+    min_year: int = Query(..., description="Minimum year"),
+    max_year: int = Query(..., description="Maximum year"),
+    user: User = Depends(get_current_user)
+) -> JSONResponse:
+    with Session(engine) as session:
+        productions = session.query(Production).where(
+            Production.year >= min_year,
+            Production.year <= max_year
+        ).all()
+
+        if not productions:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"error": {"message": "Productions not found.",
+                                  "type": "ProductionInfo", "code": 404}}
+            )
+
+        return JSONResponse({
+            "success": {
+                "message": "Productions fetched successfully.",
+                "type": "ProductionInfo",
+                "code": 200
+            },
+            "productions": jsonable_encoder(productions)
+        }, status_code=status.HTTP_200_OK)
 
 
 @router.get('/productions/year/{year}', response_model=List[Production])
@@ -128,34 +156,7 @@ async def get_productions_by_year(year: int, user: User = Depends(get_current_us
             "message": "Productions fetched successfully.",
             "type": "ProductionInfo",
             "code": 200
-        }, "products": productions}, status.HTTP_200_OK)
-
-
-@router.get('/productions/year', response_model=List[Production])
-async def get_productions_by_year_range(min_year: int, max_year: int, user: User = Depends(get_current_user)) -> JSONResponse:
-    with Session(engine) as session:
-        productions = session.exec(
-            select(Production).where(
-                Production.year >= min_year,
-                Production.year <= max_year
-            )
-        ).all()
-
-        if not productions:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"error": {"message": "Productions not found.",
-                                  "type": "ProductionInfo", "code": 404}}
-            )
-
-        return JSONResponse({
-            "success": {
-                "message": "Productions fetched successfully.",
-                "type": "ProductionInfo",
-                "code": 200
-            },
-            "productions": productions
-        }, status_code=status.HTTP_200_OK)
+        }, "products": jsonable_encoder(productions)}, status.HTTP_200_OK)
 
 
 @router.get('/productions/category/{category}', response_model=List[Production])
@@ -175,4 +176,4 @@ async def get_productions_by_category(category: str, user: User = Depends(get_cu
             "message": "Productions fetched successfully.",
             "type": "ProductionInfo",
             "code": 200
-        }, "products": productions}, status.HTTP_200_OK)
+        }, "products": jsonable_encoder(productions)}, status.HTTP_200_OK)
