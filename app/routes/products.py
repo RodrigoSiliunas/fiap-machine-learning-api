@@ -19,7 +19,7 @@ router = APIRouter(prefix="/v1")
 @router.get('/products', response_model=List[Product])
 async def get_all_products(user: User = Depends(get_current_user)) -> JSONResponse:
     with Session(engine) as session:
-        products = session.exec(select(Product)).all()
+        products = session.query(select(Product)).all()
 
         return JSONResponse({"success": {
             "message": "Products fetched successfully.",
