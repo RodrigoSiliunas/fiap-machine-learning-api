@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.configs.database import (
-    engine,
     init_db,
     get_session,
     check_tables,
@@ -10,9 +10,24 @@ from app.configs.database import (
 
 # Área de importação de rotas;
 from app.routes import (
-    users,
     accounts,
-    tweets
+    users,
+    products,
+    productions,
+    processings,
+    commercializations,
+    importations,
+    exportations
+)
+
+from app.packages.Scrapping import (
+    Scraping,
+    ProductScraping,
+    ProductionScraping,
+    ProcessingScraping,
+    CommercializationScraping,
+    ImportationScraping,
+    ExportationScraping
 )
 
 """
@@ -35,6 +50,7 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+
 @app.on_event("startup")
 def on_startup():
     """Inicializa o banco de dados, verifica se as tabelas já existem, caso não existam, cria-as."""
@@ -44,10 +60,34 @@ def on_startup():
         print("Some tables do not exist, creating tables...")
         init_db()
 
+    scrapper = Scraping()
+    scraper_classes = {
+        'Product': ProductScraping,
+        'Production': ProductionScraping,
+        'Processing': ProcessingScraping,
+        'Commercialization': CommercializationScraping,
+        'Importation': ImportationScraping,
+        'Exportation': ExportationScraping
+    }
+
     with get_session() as session:
+        scrapping_list = [
+            'Product',
+            'Production',
+            'Processing',
+            'Commercialization',
+            'Importation',
+            'Exportation'
+        ]
         tables_empty = check_if_tables_empty(session)
-        for table, is_empty in tables_empty.items():
-            print(f"{table.capitalize()} table is empty: {is_empty}")
+
+        for table_name in scrapping_list:
+            if tables_empty.get(table_name.lower(), False):
+                scraper_class = scraper_classes[table_name]
+                scrapper.scrapers.append(scraper_class())
+
+        if scrapper.scrapers:
+            scrapper.populate_database(session)
 
 
 # Lógica para inicialização do nosso banco de dados;
@@ -56,6 +96,11 @@ def on_startup():
 # SQLModel.metadata.create_all(engine)
 
 # Registro de minhas rotas incluindo elas no router.
-app.include_router(users)
-app.include_router(tweets)
 app.include_router(accounts)
+app.include_router(users)
+app.include_router(products)
+app.include_router(productions)
+app.include_router(processings)
+app.include_router(commercializations)
+app.include_router(importations)
+app.include_router(exportations)

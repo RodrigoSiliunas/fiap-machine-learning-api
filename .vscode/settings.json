@@ -1,5 +1,11 @@
 {
     "cSpell.words": [
+        "enviroments",
+        "fastapi",
+        "processings",
+        "processsing",
+        "pydantic",
+        "sqlalchemy",
         "sqlmodel"
     ]
 }

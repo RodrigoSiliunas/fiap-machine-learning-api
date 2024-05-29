@@ -31,3 +31,18 @@ class CRUDService(Generic[T]):
         if obj:
             session.delete(obj)
             session.commit()
+
+    def check_and_create(self, session: Session, obj_in: T) -> T:
+        fields_to_check = {field.name for field in self.model.__fields__.values() if field.name != "id"}
+        obj_values = {field: getattr(obj_in, field) for field in fields_to_check}
+
+        # Build a query to check for existing objects with matching values
+        existing_obj = session.exec(
+            select(self.model).filter_by(**obj_values)
+        ).first()
+
+        if not existing_obj:
+            # No existing object found, create a new one
+            return self.create(session, obj_in)
+
+        return None

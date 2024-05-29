@@ -1,2 +1,14 @@
 # Ignora a estrutura dentro da pasta enviroments;
 \enviroments
+
+# Ignora tudo dentro da pasta database;
+/app/database/*
+
+# Ignora arquivo .egg gerado pelo setuptools;
+*.egg-info
+
+# Ignora arquivos de cache;
+**/__pycache__.py
+
+# Ignora arquivo .env com credenciais;
+.env

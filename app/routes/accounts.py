@@ -1,17 +1,19 @@
 from datetime import datetime, timedelta
-from typing import Union
 
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.param_functions import Body
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
 
-from app.configurations.enviroments import (
+from app.routes.schemas import (
+    UserLogin
+)
+
+from app.configs.enviroments import (
     ACCESS_TOKEN_EXPIRES,
     REFRESH_TOKEN_EXPIRES
 )
-from app.configurations.database import engine
+from app.configs.database import engine
 from app.models import User, ValidToken
 from app.packages.Auth import (
     verify_password,
@@ -22,13 +24,6 @@ from app.packages.Auth import (
 )
 
 router = APIRouter(prefix="/v1")
-
-
-# UserLogin é um JSON com email e senha;
-class UserLogin(BaseModel):
-    email: str
-    password: str
-
 
 @router.post("/login")
 async def authenticate_user(request: UserLogin = Body(...)) -> JSONResponse:

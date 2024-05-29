@@ -4,39 +4,56 @@ from bs4 import BeautifulSoup
 from typing import List
 from app.models import Production, Product
 from app.packages.CRUDService import CRUDService
-from sqlmodel import Session
+from sqlmodel import Session, select
 
-from app.packages.Scrapping import BaseScraping
+from app.packages.Scrapping.BaseScraping import BaseScraping
 
 
 class ProductionScraping(BaseScraping):
     def __init__(self):
-        self.production_url = "http://example.com/productions"
-        self.production_service = CRUDService(Production)
-        self.product_service = CRUDService(Product)
+        self.year = 1970
+        self.product_url = f"http://vitibrasil.cnpuv.embrapa.br/index.php?ano={self.year}&opcao=opt_02"
+        self.product_service = CRUDService(Production)
 
-    def fetch_data(self, session: Session) -> List[Production]:
-        response = requests.get(self.production_url)
-        soup = BeautifulSoup(response.text, 'html.parser')
-
-        # Simulação de scraping de produções
+    def fetch_data(self, products: list[dict]) -> List[Product]:
         productions = []
-        products = self.product_service.get_all(session)
 
-        for item in soup.find_all('div', class_='production'):
-            year = int(item.find('span', class_='year').text)
-            quantity = int(item.find('span', class_='quantity').text)
-            product_name = item.find('span', class_='product_name').text
+        for _ in range(self.year, 2024):
+            response = requests.get(self.product_url)
 
-            product_id = next(
-                (p.id for p in products if p.name == product_name), None)
-            if product_id:
-                productions.append(Production(
-                    year=year, quantity=quantity, product_id=product_id))
+            if response.status_code != 200:
+                raise Exception(f"Error fetching data from {self.product_url}. Status code: {response.status_code}.")
+
+            soup = BeautifulSoup(response.text, 'html.parser')
+            data = soup.find('table', class_='tb_base tb_dados')
+            tbody = data.find('tbody')
+
+            for tr in tbody.find_all('tr'):
+                items = tr.find_all('td')
+
+                if any('tb_item' in td.get('class', []) for td in items):
+                    continue
+
+                # Tratamento da quantidade de produtos;
+                production_quantity = ''.join(filter(str.isdigit, items[1].text))
+
+                if (production_quantity is None) or (production_quantity == ''):
+                    production_quantity = 0
+
+                product = list(filter(lambda product: product.get('name') == items[0].text, products))
+                production = Production(year=self.year, quantity=production_quantity, product_id=product[0].get('id'))
+                productions.append(production)
+
+            self.year += 1
+            self.product_url = f"http://vitibrasil.cnpuv.embrapa.br/index.php?ano={self.year}&opcao=opt_02"
         return productions
 
     def populate_database(self, session: Session):
-        productions = self.fetch_data(session)
+        products = session.exec(select(Product)).all()
+        product_dicts = [product.dict() for product in products]
+
+        print('Starting to populate database with data from productions...')
+        productions = self.fetch_data(product_dicts)
+
         for production in productions:
-            self.production_service.create(session, production)
-        session.commit()
+            self.product_service.check_and_create(session, production)
