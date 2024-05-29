@@ -78,7 +78,7 @@ curl -X GET "http://127.0.0.1:8000/productions?limit=10&offset=0" -H "Authorizat
 ```
 
 ### Estrutura do Projeto
-
+```sh
 .
 ├── app
 │   ├── configs
@@ -131,7 +131,7 @@ curl -X GET "http://127.0.0.1:8000/productions?limit=10&offset=0" -H "Authorizat
 ├── main.py
 ├── LICENSE
 └── README.md
-
+```
 ### Contribuição
 
 Sinta-se à vontade para contribuir com este projeto. Para isso:
