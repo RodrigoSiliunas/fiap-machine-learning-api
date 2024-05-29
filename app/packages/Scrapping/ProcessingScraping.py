@@ -29,8 +29,7 @@ class ProcessingScraping(BaseScraping):
                 response = requests.get(self.product_url)
 
                 if response.status_code != 200:
-                    raise Exception(f"Error fetching data from {
-                                    self.product_url}. Status code: {response.status_code}.")
+                    raise Exception(f"Error fetching data from {self.product_url}. Status code: {response.status_code}.")
 
                 soup = BeautifulSoup(response.text, 'html.parser')
                 data = soup.find('table', class_='tb_base tb_dados')
